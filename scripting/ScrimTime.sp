@@ -10,8 +10,6 @@ ConVar g_cVarGameType;
 
 bool isInLobby = true;
 
-Handle playerTeams;
-
 public Plugin myinfo =
   {
     name = "ScrimTime",
@@ -26,9 +24,6 @@ public void OnPluginStart()
     RegConsoleCmd("readyvote", Command_ReadyVote);
     g_cVarGameMode = FindConVar("game_mode");
     g_cVarGameType = FindConVar("game_type");
-    AddCommandListener(Command_JoinTeam, "jointeam");
-
-    playerTeams = CreateArray(2, 0);
 }
 
 public void OnMapStart()
@@ -49,33 +44,6 @@ public void OnMapStart()
     }
 }
 
-public void OnMapEnd()
-{
-    /*
-    char target_name[MAX_TARGET_LENGTH];
-    int target_list[MAXPLAYERS];
-    int target_count;
-    bool tn_is_ml;
-    */
-
-    int playerTeam[1][2];
-
-    for(int i = 0; i <= MaxClients; i++)
-    {
-        playerTeam[0][0] = GetClientSerial(i);
-        playerTeam[0][1] = GetClientTeam(i);
-        PushArrayArray(playerTeams, playerTeam[0], 2);
-    }
-}
-/*
-public void OnClientPutInServer(int client)
-{
-    if(!isInLobby)
-    {
-        CS_SwitchTeam(client, CS_TEAM_CT);
-    }
-}
-*/
 public Action Command_ReadyVote(int client, int args)
 {
     PrintToServer("Starting ready vote");
@@ -116,14 +84,4 @@ public void Handle_VoteResults(Menu menu,
     PrintCenterTextAll("All players ready. Starting game.");
     isInLobby = false;
     ForceChangeLevel("lobby_mapveto", "start map vote");
-}
-
-public Action Command_JoinTeam(int client, char[] command, int args)
-{
-    if(!isInLobby)
-    {
-        CS_SwitchTeam(client, CS_TEAM_CT);
-        return Plugin_Handled;
-    }
-    return Plugin_Continue;
 }
