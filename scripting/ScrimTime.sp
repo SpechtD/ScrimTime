@@ -74,10 +74,19 @@ public void Handle_VoteResults(Menu menu,
                         int num_items,
                         const int[][] item_info)
 {
-    if(num_votes < GetClientCount())
+    if(num_votes < num_clients)
     {
+        char clientName[MAX_NAME_LENGTH];
         PrintToChatAll("%d players are not ready", GetClientCount() - num_votes);
         PrintCenterTextAll("%d players are not ready", GetClientCount() - num_votes);
+        for(int i = 0; i < num_clients; i++)
+        {
+            if(client_info[i][VOTEINFO_CLIENT_ITEM] == -1)
+            {
+                GetClientName(client_info[i][VOTEINFO_CLIENT_INDEX], clientName, MAX_NAME_LENGTH);
+                PrintToChatAll("%s is not ready", clientName);
+            }
+        }
         return;
     }
     PrintToChatAll("All players ready. Starting game.");
