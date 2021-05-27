@@ -22,6 +22,7 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
     RegConsoleCmd("readyvote", Command_ReadyVote);
+    RegAdminCmd("start_game", Command_StartGame, ADMFLAG_CHANGEMAP, "immediately starts the game without voting");
     g_cVarGameMode = FindConVar("game_mode");
     g_cVarGameType = FindConVar("game_type");
 }
@@ -89,8 +90,21 @@ public void Handle_VoteResults(Menu menu,
         }
         return;
     }
-    PrintToChatAll("All players ready. Starting game.");
-    PrintCenterTextAll("All players ready. Starting game.");
+    PrintToChatAll("All players ready");
+    PrintCenterTextAll("All players ready");
+    StartGame();
+}
+
+public Action Command_StartGame(int client, int args)
+{
+    StartGame();
+}
+
+public void StartGame()
+{
+
+    PrintToChatAll("Starting map veto...");
+    PrintCenterTextAll("Starting map veto...");
     isInLobby = false;
     ForceChangeLevel("lobby_mapveto", "start map vote");
 }
