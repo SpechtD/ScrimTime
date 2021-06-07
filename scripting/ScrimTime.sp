@@ -25,24 +25,16 @@ public void OnPluginStart()
     RegAdminCmd("start_game", Command_StartGame, ADMFLAG_CHANGEMAP, "immediately starts the game without voting");
     g_cVarGameMode = FindConVar("game_mode");
     g_cVarGameType = FindConVar("game_type");
+    g_cVarGameType.IntValue = 1;
+    g_cVarGameMode.IntValue = 2;
 }
 
 public void OnMapStart()
 {
-    switch(isInLobby)
-    {
-    case true:
-    {
-        g_cVarGameType.IntValue = 1;
-        g_cVarGameMode.IntValue = 2;
-    }
-    case false:
-    {
+    if(isInLobby)
+        GameRules_SetProp("m_nQueuedMatchmakingMode", 0, 1, 0, true);
+    else
         GameRules_SetProp("m_nQueuedMatchmakingMode", 1, 1, 0, true);
-        g_cVarGameType.IntValue = 0;
-        g_cVarGameMode.IntValue = 1;
-    }
-    }
 }
 
 public Action Command_ReadyVote(int client, int args)
@@ -102,9 +94,10 @@ public Action Command_StartGame(int client, int args)
 
 public void StartGame()
 {
-
     PrintToChatAll("Starting map veto...");
     PrintCenterTextAll("Starting map veto...");
     isInLobby = false;
+    g_cVarGameType.IntValue = 0;
+    g_cVarGameMode.IntValue = 1;
     ForceChangeLevel("lobby_mapveto", "start map vote");
 }
