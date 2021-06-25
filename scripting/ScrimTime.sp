@@ -5,18 +5,24 @@
 #pragma newdecls required
 #pragma semicolon 1
 
+#define VETOMAP "lobby_mapveto"
+
 ConVar g_cVarGameMode;
 ConVar g_cVarGameType;
 
-bool isInLobby = true;
+bool g_isInLobby = true;
+
+int g_player_info[MAXPLAYERS][2];
+
 
 public Plugin myinfo =
-  {
-    name = "ScrimTime",
-    author = "SauerkrautKebap",
-    description = "",
-    version = "1.0",
-    url = "https://github.com/SauerkrautKebap/ScrimTime"};
+{
+	name = "ScrimTime",
+	author = "SauerkrautKebap",
+	description = "",
+	version = "1.0",
+	url = "https://github.com/SauerkrautKebap/ScrimTime"
+};
 
 
 public void OnPluginStart()
@@ -27,11 +33,84 @@ public void OnPluginStart()
     g_cVarGameType = FindConVar("game_type");
     g_cVarGameType.IntValue = 1;
     g_cVarGameMode.IntValue = 2;
+    HookEvent("player_connect_full", Event_PlayerConnectFull);
+    HookEvent("player_team", Event_PlayerTeam);
+    HookEntityOutput("mapvetopick_controller", "OnSidesPicked", Entity_VetoController_OnSidesPicked);
+    AddCommandListener(Command_JoinTeam, "jointeam");
+}
+
+public void Entity_VetoController_OnSidesPicked(const char[] output, int caller, int activator, float delay)
+{
+    int switchSides = GetEntProp(caller, Prop_Data, "m_OnSidesPicked");
+    if(switchSides)
+    {
+        for(int i = 0; i < sizeof(g_player_info); i++)
+        {
+            if(g_player_info[i][1] == CS_TEAM_T)
+            {
+                g_player_info[i][1] = CS_TEAM_CT;
+            }
+            else if(g_player_info[i][1] == CS_TEAM_CT)
+            {
+                g_player_info[i][1] = CS_TEAM_T;
+            }
+        }
+    }
+}
+
+public Action Event_PlayerTeam(Handle event, const char[] name, bool dontBroadcast)
+{
+    if(!g_isInLobby)
+        return Plugin_Continue;
+
+    int team = GetEventInt(event, "team");
+    int client = GetClientOfUserId(GetEventInt(event, "userid"));
+
+    g_player_info[client][0] = GetClientUserId(client);
+    g_player_info[client][1] = team;
+
+    return Plugin_Continue;
+}
+
+public Action Event_PlayerConnectFull(Handle event, const char[] name, bool dontBroadcast)
+{
+    int client = GetClientOfUserId(GetEventInt(event, "userid"));
+    int user_id = GetEventInt(event, "userid");
+
+    if(!g_isInLobby)
+    {
+        SetEntPropFloat(client, Prop_Send, "m_fForceTeam", 0.0);
+        for(int i = 0; i < sizeof(g_player_info); i++)
+        {
+            if(g_player_info[i][0] == user_id)
+            {
+                CS_SwitchTeam(client, g_player_info[i][1]);
+                return Plugin_Continue;
+            }
+        }
+    }
+    else
+    {
+        SetEntPropFloat(client, Prop_Send, "m_fForceTeam", 60.0);
+    }
+    return Plugin_Continue;
+}
+
+public Action Command_JoinTeam(int client, const char[] command, int argc)
+{
+    if(!g_isInLobby)
+        return Plugin_Stop;
+
+    return Plugin_Continue;
 }
 
 public void OnMapStart()
 {
-    if(isInLobby)
+    char map[MAX_NAME_LENGTH];
+
+    GetCurrentMap(map, sizeof(map));
+
+    if(g_isInLobby)
         GameRules_SetProp("m_nQueuedMatchmakingMode", 0, 1, 0, true);
     else
         GameRules_SetProp("m_nQueuedMatchmakingMode", 1, 1, 0, true);
@@ -96,8 +175,8 @@ public void StartGame()
 {
     PrintToChatAll("Starting map veto...");
     PrintCenterTextAll("Starting map veto...");
-    isInLobby = false;
+    g_isInLobby = false;
     g_cVarGameType.IntValue = 0;
     g_cVarGameMode.IntValue = 1;
-    ForceChangeLevel("lobby_mapveto", "start map vote");
+    ForceChangeLevel(VETOMAP, "start map vote");
 }
